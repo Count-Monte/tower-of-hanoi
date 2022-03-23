@@ -1,6 +1,6 @@
 <template>
   <div>
-    <SettingModal :settings="settings" />
+    <Admin :settings="$store.state.settings.list" />
   </div>
 </template>
 
@@ -11,13 +11,14 @@ export default {
   name: 'AdminPage',
   data() {
     return {
-      settings: []
+      settings: [],
+      scores: [],
     }
   },
   async mounted () {
     try {
-      const response = await this.$axios.get('settings');
-      this.settings = response.data.data;
+      const settingsResponse = await this.$axios.get('settings');
+      this.$store.commit('settings/set', settingsResponse.data.data);
     } catch (error) {
       console.error(error);
     }

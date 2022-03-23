@@ -89,22 +89,22 @@ export default {
   name: 'SettingModal',
   props: [ 'settings' ],
   data() {
-    console.log(this.settings);
     return {
       isOpen: false,
       // formField: this.settings.map(setting => setting.attributes.Value)
     }
   },
   methods: {
-    handleSubmit(form) {
+    async handleSubmit(form) {
       try {
         for (let i = 0; i < 2; i ++) {
-          this.$axios.put(`settings/${this.settings[i].id}`, {
+          const response = await this.$axios.put(`settings/${this.settings[i].id}`, {
             data: {
               Key: this.settings[i].attributes.Key,
               Value: this.formField[i]
             }
-          })
+          });
+          this.$store.commit('settings/update', response.data.data);
         }
       } catch (err) {
         console.error(err);
