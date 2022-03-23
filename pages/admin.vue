@@ -11,8 +11,6 @@ export default {
   name: 'AdminPage',
   data() {
     return {
-      settings: [],
-      scores: [],
     }
   },
   async mounted () {
