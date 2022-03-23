@@ -29,14 +29,14 @@
                     we set it here, because we want to limit our interference with the user interface
                 -->
                 <Disk v-for="diskNumber in peg"
-                      :key="diskNumber"
-                      class="flex-none z-10"
-                      style="touch-action: none"
-                      :color="disks[diskNumber].color"
-                      :width="disks[diskNumber].width"
-                      :height="disks[diskNumber].height"
-                      @mousedown.native="(event) => pickupDisk(event, pegNumber, diskNumber)"
-                      @touchstart.native="(event) => pickupDisk(event, pegNumber, diskNumber)"
+                    :key="diskNumber"
+                    class="flex-none z-10"
+                    style="touch-action: none"
+                    :color="disks[diskNumber].color"
+                    :width="dragging && dragging.diskNumber === diskNumber ? dragging.width : disks[diskNumber].width"
+                    :height="dragging && dragging.diskNumber === diskNumber ? dragging.height : disks[diskNumber].height"
+                    @mousedown.native="(event) => pickupDisk(event, pegNumber, diskNumber)"
+                    @touchstart.native="(event) => pickupDisk(event, pegNumber, diskNumber)"
                 />
 
                 <div style="position: relative; height: 100%; z-index: -20">
@@ -107,18 +107,20 @@ export default {
         pickupDisk(event, pegNumber, diskNumber) {
             // only pickup if it's the top disk on the peg
             if (!this.done && this.pegs[pegNumber].slice(-1)[0] === diskNumber) {
-                // 'position: fixed' means we can freely position the disk anywhere in the page
-                event.target.style.height = event.target.clientHeight;
-                event.target.style.width = event.target.clientWidth;
-                event.target.style.position = 'fixed';
-                event.target.style.zIndex = '-10';
-
                 // remember what we're dragging around - this is needed for when we drop the disk
                 this.dragging = {
                     disk: event.target,
+                    width: `${event.target.clientWidth}px`,
+                    height: `${event.target.clientHeight}px`,
                     pegNumber,
                     diskNumber
                 };
+
+                // 'position: fixed' means we can freely position the disk anywhere in the page
+                // event.target.style.height = event.target.clientHeight;
+                // event.target.style.width = event.target.clientWidth;
+                event.target.style.position = 'fixed';
+                event.target.style.zIndex = '-10';
 
                 // initialise the position of the disk
                 // usually the user will start moving as soon as they pickup a disk (even if it's just a jiggle)
@@ -133,6 +135,7 @@ export default {
                     // mousemove is easy - there's only one pointer, so it's x/y is easily found
                     this.dragging.disk.style.left = event.clientX - this.dragging.disk.clientWidth / 2;
                     this.dragging.disk.style.top = event.clientY -  this.dragging.disk.clientHeight / 2;
+                    console.log(this.dragging.disk.style.left, this.dragging.disk.style.top);
                 } else {
                     // touchmove is harder...
                     // multiple touch is supported, but so far we're only interested in one
@@ -192,7 +195,6 @@ export default {
 
         // after clicking/touching a disk to move, the user can try to 'drop' it anywhere
         // so we listen for this at the top most level
-        console.log('abababab');
         document.addEventListener('mouseup', this.dropDisk);
         document.addEventListener('touchend', this.dropDisk);
         document.addEventListener('touchcancel', this.dropDisk);
