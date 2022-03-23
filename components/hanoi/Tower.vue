@@ -192,7 +192,6 @@ export default {
 
         // after clicking/touching a disk to move, the user can try to 'drop' it anywhere
         // so we listen for this at the top most level
-        console.log('abababab');
         document.addEventListener('mouseup', this.dropDisk);
         document.addEventListener('touchend', this.dropDisk);
         document.addEventListener('touchcancel', this.dropDisk);

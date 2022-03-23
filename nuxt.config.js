@@ -30,7 +30,8 @@ export default {
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: [
     '~/components',
-    '~/components/hanoi'
+    '~/components/hanoi',
+    '~/components/admin',
   ],
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
@@ -45,31 +46,18 @@ export default {
   modules: [
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
-    '@nuxtjs/auth',
     '@nuxtjs/strapi'
   ],
 
   strapi: {
     url: process.env.STRAPI_URL || `http://localhost:1337/api`,
-    entities: ['games'],
+    entities: ['scores', 'settings'],
   },
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
     // Workaround to avoid enforcing hard-coded localhost:3000: https://github.com/nuxt-community/axios-module/issues/308
-    baseURL: 'http://127.0.0.1:5000/api'
-  },
-
-  auth: {
-    strategies: {
-      local: {
-        endpoints: {
-          login: { url: 'login', method: 'post', propertyName: 'data.token' },
-          user: { url: 'me', method: 'get', propertyName: 'data' },
-          logout: false
-        }
-      }
-    }
+    baseURL: process.env.STRAPI_URL || `http://localhost:1337/api`
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
