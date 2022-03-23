@@ -53,11 +53,14 @@
                 <span v-if="moves > minMoves">but can you do it in less moves? <a @click.prevent="reset" class="text-blue-700 visited:text-purple-700 hover:text-indigo-500 underline cursor-pointer">Try again?</a></span>
             </span>
         </div>
+        <PreForm :onIDApproved="handleIdApproved" />
     </div>
 </template>
 
 <script>
+import PreForm from './PreForm.vue';
 export default {
+  components: { PreForm },
     data() {
         return {
             dragging: null,
@@ -184,6 +187,10 @@ export default {
 
                 this.dragging = null;
             }
+        },
+
+        handleIdApproved(adminId, userId) {
+            console.log(adminId, userId);
         }
     },
 
