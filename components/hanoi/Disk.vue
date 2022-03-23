@@ -1,6 +1,6 @@
 <template>
     <div :style="styleObject">
-
+        
     </div>
 </template>
 
