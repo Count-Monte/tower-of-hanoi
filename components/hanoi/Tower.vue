@@ -106,7 +106,7 @@ export default {
 
         pickupDisk(event, pegNumber, diskNumber) {
             // only pickup if it's the top disk on the peg
-            if (!this.done && this.pegs[pegNumber].slice(-1)[0] === diskNumber) {
+            if (!this.dragging && !this.done && this.pegs[pegNumber].slice(-1)[0] === diskNumber) {
                 // remember what we're dragging around - this is needed for when we drop the disk
                 this.dragging = {
                     disk: event.target,
@@ -133,16 +133,15 @@ export default {
             if (this.dragging) {
                 if (event.clientX) {
                     // mousemove is easy - there's only one pointer, so it's x/y is easily found
-                    this.dragging.disk.style.left = event.clientX - this.dragging.disk.clientWidth / 2;
-                    this.dragging.disk.style.top = event.clientY -  this.dragging.disk.clientHeight / 2;
-                    console.log(this.dragging.disk.style.left, this.dragging.disk.style.top);
+                    this.dragging.disk.style.left = `${event.clientX - this.dragging.disk.clientWidth / 2}px`;
+                    this.dragging.disk.style.top = `${event.clientY -  this.dragging.disk.clientHeight / 2}px`;
                 } else {
                     // touchmove is harder...
                     // multiple touch is supported, but so far we're only interested in one
                     // although, knowing that we can get information on multiple touch points is cool
                     // pinch zoom or rotation
-                    this.dragging.disk.style.left = event.changedTouches[0].clientX - this.dragging.disk.clientWidth / 2;
-                    this.dragging.disk.style.top = event.changedTouches[0].clientY - this.dragging.disk.clientHeight / 2;
+                    this.dragging.disk.style.left = `${event.changedTouches[0].clientX - this.dragging.disk.clientWidth / 2}px`;
+                    this.dragging.disk.style.top = `${event.changedTouches[0].clientY - this.dragging.disk.clientHeight / 2}px`;
                 }
             }
         },
@@ -158,23 +157,24 @@ export default {
                 // touchend
                 elem = document.elementFromPoint(event.changedTouches[0].clientX, event.changedTouches[0].clientY);
             }
+            if (elem) {
+                pegNumber = elem.dataset['peg'];
 
-            pegNumber = elem.dataset['peg'];
+                if (this.dragging && pegNumber !== undefined) {
+                    if (this.pegs[pegNumber].length === 0 || this.pegs[pegNumber].slice(-1).pop() < this.dragging.diskNumber) {
+                        this.pegs[pegNumber].push(this.dragging.diskNumber);
+                        this.pegs[this.dragging.pegNumber].pop();
+                    }
 
-            if (this.dragging) {
-                if (this.pegs[pegNumber].length === 0 || this.pegs[pegNumber].slice(-1).pop() < this.dragging.diskNumber) {
-                    this.pegs[pegNumber].push(this.dragging.diskNumber);
-                    this.pegs[this.dragging.pegNumber].pop();
+                    if (this.dragging.disk.parentNode !== elem) {
+                        this.moves++;
+                    }
                 }
 
-                if (this.dragging.disk.parentNode !== elem) {
-                    this.moves++;
-                }
+                this.done = this.win.every((test, index) =>  {
+                    return this.pegs[2][index] === test;
+                });
             }
-
-            this.done = this.win.every((test, index) =>  {
-                return this.pegs[2][index] === test;
-            });
         },
 
         dropDisk() {
@@ -198,6 +198,6 @@ export default {
         document.addEventListener('mouseup', this.dropDisk);
         document.addEventListener('touchend', this.dropDisk);
         document.addEventListener('touchcancel', this.dropDisk);
-    }
+    },
 };
 </script>
