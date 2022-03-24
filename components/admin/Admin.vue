@@ -69,6 +69,7 @@ export default {
     parseData(data) {
       return data.map(el => {
         return {
+          'Participant ID': this.userId,
           'Game Name': el.attributes.GameId,
           'Number of Disks': el.attributes.NumberOfDisks,
           'Time to complete the game (minutes)': (el.attributes.ElapsedTime/60).toFixed(2),
