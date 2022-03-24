@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Tower :settings="settings" />
+    <Tower :settings="$store.state.settings.list" />
   </div>
 </template>
 
@@ -11,15 +11,14 @@ export default Vue.extend({
   name: 'IndexPage',
   data() {
     return {
-      settings: []
     }
   },
-  async mounted() {
+  async mounted () {
     try {
-      const response = await this.$axios.get('settings');
-      this.settings = response.data.data;
-    } catch (err) {
-      console.error(err);
+      const settingsResponse = await this.$axios.get('settings');
+      this.$store.commit('settings/set', settingsResponse.data.data);
+    } catch (error) {
+      console.error(error);
     }
   }
 })

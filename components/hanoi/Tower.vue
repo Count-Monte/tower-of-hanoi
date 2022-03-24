@@ -1,17 +1,16 @@
 <template>
     <div>
-        <div class="flex">
-            <button class="flex-1 py-4 border border-blue-500" :class="{'bg-blue-100': numDisks === 3}" @click="() => { numDisks = 3; reset()}">3 disks</button>
-            <button class="flex-1 py-4 border border-blue-500" :class="{'bg-blue-100': numDisks === 4}" @click="() => { numDisks = 4; reset()}">4 disks</button>
-            <button class="flex-1 py-4 border border-blue-500" :class="{'bg-blue-100': numDisks === 5}" @click="() => { numDisks = 5; reset()}">5 disks</button>
-            <button class="flex-1 py-4 border border-blue-500" :class="{'bg-blue-100': numDisks === 6}" @click="() => { numDisks = 6; reset()}">6 disks</button>
-        </div>
-
         <!--
             we need to track mouse movements in the container when trying to move disks
             might as well track touch movements here, too
         -->
-        <div class="flex justify-between items-center mx-8 mt-8" @mousemove="moveDisk" @touchmove="moveDisk">
+        <div class="flex justify-between items-center mx-8 mt-8">
+            <div class='text-gray-800 text-xl font-bold'>
+                {{remainingTimeString}} Remaining
+            </div>
+        </div>
+
+        <div v-if="endTime > currentTime" class="flex justify-between items-center mx-8 mt-8" @mousemove="moveDisk" @touchmove="moveDisk">
             <div v-for="(peg, pegNumber) in pegs"
                  :key="pegNumber"
                  class="flex relative flex-col-reverse justify-start items-center"
@@ -45,6 +44,12 @@
             </div>
         </div>
 
+        <div v-else-if="endTime" class="flex justify-between items-center mx-8 mt-8">
+            <div class='text-gray-800 text-2xl font-bold mx-auto'>
+                Game Finished!
+            </div>
+        </div>
+
         <div class="lg:flex justify-between m-8 text-xl">
             <span>Moves taken: {{ moves }}/{{minMoves}}</span>
             <span v-if="done" class="ml-4">
@@ -53,27 +58,33 @@
                 <span v-if="moves > minMoves">but can you do it in less moves? <a @click.prevent="reset" class="text-blue-700 visited:text-purple-700 hover:text-indigo-500 underline cursor-pointer">Try again?</a></span>
             </span>
         </div>
+        <PreForm :onIDApproved="handleIdApproved" />
     </div>
 </template>
 
 <script>
+import PreForm from './PreForm.vue';
+import { solveHanoi, steps } from 'towers-of-hanoi';
+import moment from 'moment';
+import { v4 as uuidv4 } from 'uuid';
 export default {
+    components: { PreForm },
+    props: ['settings'],
     data() {
         return {
             dragging: null,
-
-            numDisks: 3,
-
+            totalTime: 0,
             pegs: [],
-
             win: [],
-
             disks: {},
-
             moves: 0,
             minMoves: 0,
-
             done: false,
+            correctMoves: 0,
+            startTime: 0,
+            endTime: 0,
+            currentTime: 0,
+            steps: [],
         }
     },
 
@@ -102,6 +113,12 @@ export default {
             this.moves = 0;
             this.minMoves = Math.pow(2, this.numDisks) - 1;
             this.done = false;
+            this.startTime = moment();
+            this.correctMoves = 0;
+            this.steps = [];
+            for (let move of solveHanoi(this.numDisks)) {
+                this.steps.push(move);
+            }
         },
 
         pickupDisk(event, pegNumber, diskNumber) {
@@ -161,6 +178,12 @@ export default {
                 pegNumber = elem.dataset['peg'];
 
                 if (this.dragging && pegNumber !== undefined) {
+                    if (this.compareSteps(this.steps[0], this.dragging.pegNumber, pegNumber)) {
+                        this.correctMoves ++;
+                    } else if(this.steps.length > 1 && this.compareSteps(this.steps[1], this.dragging.pegNumber, pegNumber)) {
+                        this.correctMoves ++;
+                        this.steps.shift();
+                    }
                     if (this.pegs[pegNumber].length === 0 || this.pegs[pegNumber].slice(-1).pop() < this.dragging.diskNumber) {
                         this.pegs[pegNumber].push(this.dragging.diskNumber);
                         this.pegs[this.dragging.pegNumber].pop();
@@ -177,6 +200,11 @@ export default {
             }
         },
 
+        compareSteps(step, from, to) {
+            console.log({...step}, from, to);
+            return step.from - 1 == from && step.to - 1 == to;
+        },
+
         dropDisk() {
             // reset everything
             if (this.dragging) {
@@ -187,6 +215,15 @@ export default {
 
                 this.dragging = null;
             }
+        },
+
+        handleIdApproved(adminId, userId) {
+            this.userId = userId;
+            this.endTime = moment().add('seconds', this.settings[1]?.attributes?.Value);
+        },
+
+        updateCurrentTime() {
+            this.currentTime = moment();
         }
     },
 
@@ -198,6 +235,40 @@ export default {
         document.addEventListener('mouseup', this.dropDisk);
         document.addEventListener('touchend', this.dropDisk);
         document.addEventListener('touchcancel', this.dropDisk);
+
+        setInterval(this.updateCurrentTime, 1000);
     },
+
+    computed: {
+        numDisks() {
+            return this.settings[0]?.attributes?.Value;
+        },
+        remainingTimeString() {
+            const remainingSeconds = this.endTime && moment.duration(this.endTime.diff(this.currentTime)).asSeconds();
+            return `${Math.floor(remainingSeconds / 60)}:${Math.floor(remainingSeconds % 60)}`;
+        }
+    },
+
+    watch: {
+        numDisks() {
+            this.reset();
+        },
+
+        done(newValue, oldValue) {
+            if (newValue) {
+                console.log(this.userId);
+                this.$axios.post('scores', {
+                    data: {
+                        NumberOfDisks: this.numDisks,
+                        ElapsedTime: (moment.duration(moment().diff(this.startTime)).asSeconds()).toFixed(0),
+                        TotalMoves: this.moves,
+                        CorrectMoves: this.minMoves,
+                        UserId: this.userId,
+                        GameId: `Game_${uuidv4()}`
+                    }
+                })
+            }
+        }
+    }
 };
 </script>
