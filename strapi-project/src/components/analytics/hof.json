@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_analytics_hofs",
+  "info": {
+    "displayName": "HOF",
+    "icon": "church",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "NumberOfDisks": {
+      "type": "integer"
+    },
+    "ElapsedTime": {
+      "type": "decimal"
+    },
+    "TotalMoves": {
+      "type": "integer"
+    },
+    "CorrectMoves": {
+      "type": "integer"
+    },
+    "WrongMoves": {
+      "type": "integer"
+    },
+    "DownloadCSV": {
+      "displayName": "Button",
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.button"
+    }
+  }
+}
