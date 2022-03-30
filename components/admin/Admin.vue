@@ -30,11 +30,34 @@
         </button>
       </div>
     </div>
+    <div class="grid grid-cols-2">
+      <div>
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="userId">
+          Report Date
+        </label>
+        <input 
+          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+          id="reportDate" 
+          type="date"
+          v-model="reportDate"
+        />
+      </div>
+      <div class="mx-auto">
+        <button
+          @click="handleDownloadDate"
+          class="px-6 py-2 text-white bg-blue-600 rounded shadow"
+          type="button"
+        >
+          Download CSV
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import qs from 'qs';
+import moment from 'moment';
 export default {
   name: 'Admin',
   props: ['settings'],
@@ -49,7 +72,8 @@ export default {
         '600': '10 mins',
         '900': '15 mins',
       },
-      userId: ''
+      userId: '',
+      reportDate: '',
     }
   },
   methods: {
@@ -59,6 +83,9 @@ export default {
           UserId: {
             $eq: userId.value
           }
+        },
+        pagination: {
+          pageSize: -1
         }
       }, {
         encodeValuesOnly: true, // prettify url
@@ -66,10 +93,28 @@ export default {
       const response = await this.$axios.get(`scores?${query}`);
       this.download(this.convertToCSV(this.parseData(response.data.data)));
     },
+    async handleDownloadDate() {
+      const query = qs.stringify({
+        pagination: {
+          start: 0,
+          limit: -1,
+        },
+        createdAt_gte: moment(reportDate.value).format('YYYY-MM-DD'),
+        createdAt_lte: moment(reportDate.value).format('YYYY-MM-DD'),
+      }, {
+        encodeValuesOnly: true, // prettify url
+      });
+      const response = await this.$axios.get(`scores?${query}`);
+      this.download(this.convertToCSV(this.parseData(response.data.data.filter(data => {
+        console.log(data.attributes.createdAt);
+        return moment(data.attributes.createdAt).isSame(moment(reportDate.value), 'day');
+      }))));
+    },
     parseData(data) {
       return data.map(el => {
+        console.log(el);
         return {
-          'Participant ID': this.userId,
+          'Participant ID': el.attributes.UserId || 'NaN',
           'Game Name': el.attributes.GameId,
           'Number of Disks': el.attributes.NumberOfDisks,
           'Time to complete the game (minutes)': (el.attributes.ElapsedTime/60).toFixed(2),
