@@ -52,14 +52,17 @@
         </button>
       </div>
     </div>
+    <PreAdminForm :onIDApproved="handleIdApproved" />
   </div>
 </template>
 
 <script>
 import qs from 'qs';
 import moment from 'moment';
+import PreAdminForm from './PreAdminForm.vue'
 export default {
   name: 'Admin',
+  components: { PreAdminForm },
   props: ['settings'],
   data() {
     return {
@@ -72,6 +75,7 @@ export default {
         '600': '10 mins',
         '900': '15 mins',
       },
+      adminId: '',
       userId: '',
       reportDate: '',
     }
@@ -94,6 +98,7 @@ export default {
       this.download(this.convertToCSV(this.parseData(response.data.data)));
     },
     async handleDownloadDate() {
+      console.log(reportDate.value);
       const query = qs.stringify({
         pagination: {
           start: 0,
@@ -106,13 +111,12 @@ export default {
       });
       const response = await this.$axios.get(`scores?${query}`);
       this.download(this.convertToCSV(this.parseData(response.data.data.filter(data => {
-        console.log(data.attributes.createdAt);
+        if (!reportDate.value) return true;
         return moment(data.attributes.createdAt).isSame(moment(reportDate.value), 'day');
       }))));
     },
     parseData(data) {
       return data.map(el => {
-        console.log(el);
         return {
           'Participant ID': el.attributes.UserId || 'NaN',
           'Game Name': el.attributes.GameId,
@@ -170,7 +174,10 @@ export default {
       }
 
       return str;
-    }
+    },
+    handleIdApproved(adminId) {
+      this.adminId = adminId;
+    },
   }
 }
 </script>
